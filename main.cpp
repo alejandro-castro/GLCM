@@ -1,24 +1,25 @@
 #include <iostream>
 #include <math.h>
+#include <string>
+#include <map>
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
 
 using namespace std;
 using namespace cv;
 
-void glcm(Mat &img, int numLevels);
+void glcm(Mat &img, int numLevels); //map <String, float> 
 
-int main(int argc, char* argv[])
-{
+int main(int argc, char* argv[]){
+
   Mat img = imread(argv[1]);
-
   if(img.empty())
   {
     cout << "No image!";
     return 0;
   }
 
-  cvtColor(img, img, CV_BGR2GRAY);
+  cvtColor(img, img, COLOR_BGR2GRAY);
 
   int numLevels = 256;
   if (argc > 2)
@@ -31,10 +32,16 @@ int main(int argc, char* argv[])
   return 0;
 }
 
-void glcm(Mat &img, int numLevels)
-{
+
+void glcm(Mat &img, int numLevels){
+vector <String> haralickFeatureNames = {"autoc", "contr", "corrm", "corrp" , "cprom", "cshad", "dissi", "energ", "entro", 
+"homom", "homop", "maxpr", "sosvh", "savgh", "svarh", "senth", "dvarh", "denth", "inf1h", "inf2h", "indnc", "idmnc"}; //Va a ser usado para decidir si se calcula ese feature o no
+
+map <String, float> haralickFeaturesValues;
+
 
   Mat glcm = Mat::zeros(numLevels, numLevels, CV_32F);
+
 
   // Normalizing
   float slope = float(numLevels) / 255; // "255" is the maximum pixel value for the image type -> 0 ~ 255
@@ -44,13 +51,13 @@ void glcm(Mat &img, int numLevels)
     for(int j = 0; j < img.cols; j++){
       img.at<uchar>(i,j) = floor((slope * img.at<uchar>(i,j)) + 1);
     }
-  }
+}
 
   // Creating GLCM matrix with "numLevels", radius = 1 and in the horizontal direction
-  for(int i = 0; i < img.rows; i++){
-    for(int j = 0; j < img.cols-1; j++)
+  for(int i = 0; i < img.rows-1; i++){
+    for(int j = 0; j < img.cols; j++)
     {
-      glcm.at<float>(img.at<uchar>(i,j) - 1, img.at<uchar>(i,j+1) - 1) += 1;
+      glcm.at<float>(img.at<uchar>(i,j) - 1, img.at<uchar>(i+1,j) - 1) += 1; //glcm.at<float>(img.at<uchar>(i,j) - 1, img.at<uchar>(i,j+1) - 1) += 1;
     }      
   }
 
@@ -117,9 +124,10 @@ void glcm(Mat &img, int numLevels)
     denth = denth - dif_pixels[i] * log(dif_pixels[i] + 0.0000000000001); //¹
   }
 
-  float energ = 0, contr = 0, homom = 0, homop = 0, entro = 0, corrm = 0, corrp = 0,
-  autoc = 0, cprom = 0, cshad = 0, dissi = 0, maxpr = 0, sosvh = 0, HX = 0,
-  HY = 0, HXY = 0, HXY1 = 0, HXY2 = 0, inf1h = 0, inf2h = 0, indnc = 0, idmnc = 0;
+float energ = 0, contr = 0, homom = 0, homop = 0,  entro = 0, corrm = 0, corrp = 0, autoc = 0,  cprom = 0, cshad = 0, dissi = 0, maxpr = 0,
+  sosvh = 0, inf1h = 0, inf2h = 0, indnc = 0,   idmnc = 0;
+
+  float HX = 0, HY = 0, HXY = 0, HXY1 = 0, HXY2 = 0;
 
   for(int i = 0; i < numLevels; i++)
   {
@@ -169,26 +177,27 @@ void glcm(Mat &img, int numLevels)
   inf1h = (HXY - HXY1) / valueH;
   inf2h = pow((1 - exp(-2 * (HXY2 - HXY))), 0.5);
 
-  cout << "autoc = " << autoc << endl;   // Autocorrelation                            [2]
-  cout << "contr = " << contr << endl;   // Contrast                                   [1,2]
-  cout << "corrm = " << corrm << endl;   // Correlation                                [MATLAB]
-  cout << "corrp = " << corrp << endl;   // Correlation                                [1, 2]
-  cout << "cprom = " << cprom << endl;   // Cluster Prominence                         [2]
-  cout << "cshad = " << cshad << endl;   // Cluster Shade                              [2]
-  cout << "dissi = " << dissi << endl;   // Dissimilarity                              [2]
-  cout << "energ = " << energ << endl;   // Energy                                     [1, 2]
-  cout << "entro = " << entro << endl;   // Entropy                                    [2]
-  cout << "homom = " << homom << endl;   // Inverse difference (INV)                   [3]
-  cout << "homop = " << homop << endl;   // Homogenity/IDM                             [2]
-  cout << "maxpr = " << maxpr << endl;   // Maximum probability                        [2]
-  cout << "sosvh = " << sosvh << endl;   // Sum of Squares: Variance                   [1]
-  cout << "savgh = " << savgh << endl;   // Sum Average                                [1]
-  cout << "svarh = " << svarh << endl;   // Sum variance                               [1]
-  cout << "senth = " << senth << endl;   // Sum entropy                                [1]
-  cout << "dvarh = " << dvarh << endl;   // Difference variance                        [1]
-  cout << "denth = " << denth << endl;   // Difference entropy                         [1]
-  cout << "inf1h = " << inf1h << endl;   // Information measure of correlation1        [1]
-  cout << "inf2h = " << inf2h << endl;   // Information measure of correlation2        [1]
-  cout << "indnc = " << indnc << endl;   // Inverse difference normalized (INN)        [3]
-  cout << "idmnc = " << idmnc << endl;   // Inverse difference moment normalized (IDN) [3]
+
+  cout << "autoc," << autoc << endl;   // Autocorrelation                            [2]
+  cout << "contr," << contr << endl;   // Contrast                                   [1,2]
+  cout << "corrm," << corrm << endl;   // Correlation                                [MATLAB]
+  cout << "corrp," << corrp << endl;   // Correlation                                [1, 2]
+  cout << "cprom," << cprom << endl;   // Cluster Prominence                         [2]
+  cout << "cshad," << cshad << endl;   // Cluster Shade                              [2]
+  cout << "dissi," << dissi << endl;   // Dissimilarity                              [2]
+  cout << "energ," << energ << endl;   // Energy                                     [1, 2]
+  cout << "entro," << entro << endl;   // Entropy                                    [2]
+  cout << "homom," << homom << endl;   // Inverse difference (INV)                   [3]
+  cout << "homop," << homop << endl;   // Homogenity/IDM                             [2]
+  cout << "maxpr," << maxpr << endl;   // Maximum probability                        [2]
+  cout << "sosvh," << sosvh << endl;   // Sum of Squares: Variance                   [1]
+  cout << "savgh," << savgh << endl;   // Sum Average                                [1]
+  cout << "svarh," << svarh << endl;   // Sum variance                               [1]
+  cout << "senth," << senth << endl;   // Sum entropy                                [1]
+  cout << "dvarh," << dvarh << endl;   // Difference variance                        [1]
+  cout << "denth," << denth << endl;   // Difference entropy                         [1]
+  cout << "inf1h," << inf1h << endl;   // Information measure of correlation1        [1]
+  cout << "inf2h," << inf2h << endl;   // Information measure of correlation2        [1]
+  cout << "indnc," << indnc << endl;   // Inverse difference normalized (INN)        [3]
+  cout << "idmnc," << idmnc << endl;   // Inverse difference moment normalized (IDN) [3] 
 }
