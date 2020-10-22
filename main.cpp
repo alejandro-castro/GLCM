@@ -2,38 +2,96 @@
 #include <math.h>
 #include <string>
 #include <map>
-#include <opencv2/highgui/highgui.hpp>
+#include <vector>
 #include <opencv2/imgproc/imgproc.hpp>
+#include <opencv2/highgui/highgui.hpp>
 
+#include "mat.h"
+
+#define WINDOW_SIZE 10
+#define defaultNumLevels 256
+#define numberOfFeaturesToBeUsed 22
 using namespace std;
 using namespace cv;
 
-void glcm(Mat &img, int numLevels); //map <String, float> 
+const string haralickFeatureNames[22] = {"autoc", "contr", "corrm", "corrp" , "cprom", "cshad", "dissi", "energ", "entro", 
+"homom", "homop", "maxpr", "sosvh", "savgh", "svarh", "senth", "dvarh", "denth", "inf1h", "inf2h", "indnc", "idmnc"};
+
+map <String, float>  glcm(Mat &img, int numLevels); //map <String, float> 
+void FillPixelWithHaralickFeatures(Mat img, map <String, float> haralickFeatures, int y, int x);
+int address(int i, int j, int k, MatStep step){ return i*step[0]+j*step[1]+k*step[2];}
+void saveFloatImageAsMatFile(double* image, int size[]);
+
 
 int main(int argc, char* argv[]){
-
+  //Reading image
   Mat img = imread(argv[1]);
-  if(img.empty())
-  {
+  if(img.empty()){
     cout << "No image!";
     return 0;
   }
-
+  //Change to gray scale image
   cvtColor(img, img, COLOR_BGR2GRAY);
 
-  int numLevels = 256;
-  if (argc > 2)
-  {
-    numLevels = atoi(argv[2]);
+  //Getting number of levels
+  int numLevels = defaultNumLevels;
+  if (argc > 2) numLevels = atoi(argv[2]);
+   
+  //Getting dimensions of texture images
+  int numberOfWindowsX = img.cols - WINDOW_SIZE + 1;//Without padding and with stride 1
+  int numberOfWindowsY = img.rows - WINDOW_SIZE + 1;
+  
+  int size[] = {22, numberOfWindowsY, numberOfWindowsX};
+  Mat imgResult(3, size, CV_64F, Scalar::all(0));
+
+  map <String, float>  ROIresult;
+  
+
+  for (int j=0; j<numberOfWindowsY; j++){
+    for (int i=0; i<numberOfWindowsX; i++){
+      Mat ROI = img(Range(j, j+WINDOW_SIZE), Range(i, i+WINDOW_SIZE));
+      ROIresult = glcm(ROI, numLevels);
+      cout << ROIresult["corrm"]<<endl;
+      FillPixelWithHaralickFeatures(imgResult, ROIresult, j, i);
+    }
   }
+//Range ranges[3] = {Range::all(), Range::all(), Range(0,1)};
+//Mat autocimg = imgResult(ranges);
 
-  glcm(img, numLevels);
-
-  return 0;
+  double* dataPointer = (double*)imgResult.data;
+  saveFloatImageAsMatFile(dataPointer, size);
+return 0;
 }
 
+void saveFloatImageAsMatFile(double* image, int size[]){
+  const char *file = "Image1.mat";
+  
+  //Creacion de archivo mat
+  MATFile *pmat = matOpen(file, "w");
+  mxArray *pa1;
 
-void glcm(Mat &img, int numLevels){
+  for(int i=0;i < size[0];i++){
+    //Getting the Haralick feature one by one
+    //Range ranges[3] = {Range::all(), Range::all(), Range(i,i+1)};
+    //Mat img = image(ranges);
+    
+    //Creating the matrix to be save in mat file and copying the data from image
+    pa1 = mxCreateDoubleMatrix(size[1],size[2],mxREAL);
+    memcpy((void *)(mxGetPr(pa1)), (void *)(image+i*size[1]*size[2]), sizeof(double)*size[1]*size[2]); 
+    const char *name = haralickFeatureNames[i].c_str();
+    matPutVariable(pmat, name, pa1);
+  }
+  mxDestroyArray(pa1);
+  matClose(pmat);
+}
+void FillPixelWithHaralickFeatures(Mat img, map <String, float> haralickFeatures, int y, int x){
+  for (int i=0;i<22;i++){
+    string name = haralickFeatureNames[i];
+    img.at<double>(i, y, x)  = haralickFeatures[name];
+  }
+}
+
+map <String, float>  glcm(Mat &img, int numLevels){
 vector <String> haralickFeatureNames = {"autoc", "contr", "corrm", "corrp" , "cprom", "cshad", "dissi", "energ", "entro", 
 "homom", "homop", "maxpr", "sosvh", "savgh", "svarh", "senth", "dvarh", "denth", "inf1h", "inf2h", "indnc", "idmnc"}; //Va a ser usado para decidir si se calcula ese feature o no
 
@@ -178,26 +236,13 @@ float energ = 0, contr = 0, homom = 0, homop = 0,  entro = 0, corrm = 0, corrp =
   inf2h = pow((1 - exp(-2 * (HXY2 - HXY))), 0.5);
 
 
-  cout << "autoc," << autoc << endl;   // Autocorrelation                            [2]
-  cout << "contr," << contr << endl;   // Contrast                                   [1,2]
-  cout << "corrm," << corrm << endl;   // Correlation                                [MATLAB]
-  cout << "corrp," << corrp << endl;   // Correlation                                [1, 2]
-  cout << "cprom," << cprom << endl;   // Cluster Prominence                         [2]
-  cout << "cshad," << cshad << endl;   // Cluster Shade                              [2]
-  cout << "dissi," << dissi << endl;   // Dissimilarity                              [2]
-  cout << "energ," << energ << endl;   // Energy                                     [1, 2]
-  cout << "entro," << entro << endl;   // Entropy                                    [2]
-  cout << "homom," << homom << endl;   // Inverse difference (INV)                   [3]
-  cout << "homop," << homop << endl;   // Homogenity/IDM                             [2]
-  cout << "maxpr," << maxpr << endl;   // Maximum probability                        [2]
-  cout << "sosvh," << sosvh << endl;   // Sum of Squares: Variance                   [1]
-  cout << "savgh," << savgh << endl;   // Sum Average                                [1]
-  cout << "svarh," << svarh << endl;   // Sum variance                               [1]
-  cout << "senth," << senth << endl;   // Sum entropy                                [1]
-  cout << "dvarh," << dvarh << endl;   // Difference variance                        [1]
-  cout << "denth," << denth << endl;   // Difference entropy                         [1]
-  cout << "inf1h," << inf1h << endl;   // Information measure of correlation1        [1]
-  cout << "inf2h," << inf2h << endl;   // Information measure of correlation2        [1]
-  cout << "indnc," << indnc << endl;   // Inverse difference normalized (INN)        [3]
-  cout << "idmnc," << idmnc << endl;   // Inverse difference moment normalized (IDN) [3] 
+haralickFeaturesValues["autoc"]=autoc; haralickFeaturesValues["contr"]=contr; haralickFeaturesValues["corrm"]=corrm; haralickFeaturesValues["corrp"]=corrp;
+haralickFeaturesValues["cprom"]=cprom; haralickFeaturesValues["cshad"]=cshad; haralickFeaturesValues["dissi"]=dissi; haralickFeaturesValues["energ"]=energ;
+haralickFeaturesValues["entro"]=entro; haralickFeaturesValues["homom"]=homom; haralickFeaturesValues["homop"]=homop; haralickFeaturesValues["maxpr"]=maxpr;
+haralickFeaturesValues["sosvh"]=sosvh; haralickFeaturesValues["savgh"]=savgh; haralickFeaturesValues["svarh"]=svarh; haralickFeaturesValues["senth"]=senth;
+haralickFeaturesValues["dvarh"]=dvarh; haralickFeaturesValues["denth"]=denth; haralickFeaturesValues["inf1h"]=inf1h; haralickFeaturesValues["inf2h"]=inf2h;
+haralickFeaturesValues["indnc"]=indnc; haralickFeaturesValues["idmnc"]=idmnc; 
+
+
+  return haralickFeaturesValues;
 }

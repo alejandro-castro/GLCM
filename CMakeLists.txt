@@ -22,9 +22,12 @@ find_package( OpenCV REQUIRED )
 
 # tell the build to include the headers from OpenCV
 include_directories( ${OpenCV_INCLUDE_DIRS} )
+# Includes and libraries to use manage mat files
+include_directories("/Applications/MATLAB_R2019b.app/extern/include")
+link_directories("/Applications/MATLAB_R2019b.app/bin/maci64" "/Applications/MATLAB_R2019b.app/extern/lib/maci64")
 
 # specify the executable target to be built
 add_executable(glcm main.cpp)
 
 # tell it to link the executable target against OpenCV
-target_link_libraries(glcm ${OpenCV_LIBS} )
+target_link_libraries(glcm ${OpenCV_LIBS} mat mx) #I didn't need the mex library, maybe I will in the future
