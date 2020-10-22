@@ -26,8 +26,10 @@ include_directories( ${OpenCV_INCLUDE_DIRS} )
 include_directories("/Applications/MATLAB_R2019b.app/extern/include")
 link_directories("/Applications/MATLAB_R2019b.app/bin/maci64" "/Applications/MATLAB_R2019b.app/extern/lib/maci64")
 
+# Includes user libraries
+include_directories("${CMAKE_SOURCE_DIR}/Libraries")
 # specify the executable target to be built
-add_executable(glcm main.cpp)
+add_executable(glcm main.cpp ${CMAKE_SOURCE_DIR}/Libraries/glcm.cpp ${CMAKE_SOURCE_DIR}/Libraries/CVMatlabInterface.cpp)
 
 # tell it to link the executable target against OpenCV
 target_link_libraries(glcm ${OpenCV_LIBS} mat mx) #I didn't need the mex library, maybe I will in the future

@@ -38,3 +38,7 @@ CMakeFiles
 CMakeCache.txt
 Makefile
 *.cmake
+
+#Matlab files
+*.mat
+*.m
