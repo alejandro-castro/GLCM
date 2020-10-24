@@ -23,7 +23,8 @@ int main(int argc, char* argv[]){
   float slope = float(numLevels) / 256; // we calculate the inverse of the number of points that should correspond to each new quantization level
   for(int i = 0; i < img.rows; i++){
     for(int j = 0; j < img.cols; j++){
-      img.at<uchar>(i,j) = floor(slope * img.at<uchar>(i,j));
+      float new_level = slope * img.at<uint8_t>(i,j);
+      img.at<uint8_t>(i,j) = floor(new_level);
     }
   }
 
@@ -40,8 +41,15 @@ int main(int argc, char* argv[]){
   for (int j=0; j<numberOfWindowsY; j++){
     for (int i=0; i<numberOfWindowsX; i++){
       Mat ROI = img(Range(j, j+WINDOW_SIZE), Range(i, i+WINDOW_SIZE)); 
-      ROIresult = glcm(ROI, numLevels);
-      FillPixelWithHaralickFeatures(imgResult, ROIresult, j, i);
+      if ((j==4)&&(i==9)){
+        ROIresult = glcm(ROI, numLevels, true);
+        FillPixelWithHaralickFeatures(imgResult, ROIresult, j, i, true);
+      }
+      else{
+        ROIresult = glcm(ROI, numLevels, false);
+        FillPixelWithHaralickFeatures(imgResult, ROIresult, j, i, false);
+      }
+
     }
   }
 
