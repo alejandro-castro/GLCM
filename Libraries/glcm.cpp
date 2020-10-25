@@ -1,7 +1,7 @@
 #include "glcm.h"
 
 
-void glcm(Mat img, int numLevels, int pos_y, int pos_x, Mat imgResult[], bool print){
+void glcm(Mat img, int numLevels, int pos_y, int pos_x, double *imgResult, int dims[], bool print){
   Mat glcm = Mat::zeros(numLevels, numLevels, CV_32F);
   
   // Creating GLCM matrix with "numLevels", radius = 1 and in the horizontal direction
@@ -134,39 +134,19 @@ void glcm(Mat img, int numLevels, int pos_y, int pos_x, Mat imgResult[], bool pr
       if (prob > maximum_prob)  maximum_prob = prob;
     }
   }
-  //if (print) cout << var_x<<" "<< var_y<< " "<<mu_x << " "<<mu_y<<" "<<mu_x_times_y<<" "<<corr<<endl;
   // We don't use the two versions of homogeneity because we use the normalized version that is inverse difference moment normalized and inverse difference normalized
 
   // Now we save the haralick features instead of returning them
-  imgResult[0].at<double>(pos_y, pos_x) = mu_x_times_y; imgResult[1].at<double>(pos_y, pos_x) = mu_x_minus_y_squared; imgResult[2].at<double>(pos_y, pos_x) = corr;
-  imgResult[3].at<double>(pos_y, pos_x) = cluster_prominence; imgResult[4].at<double>(pos_y, pos_x) = cluster_shade; imgResult[5].at<double>(pos_y, pos_x) = mu_x_minus_y;
-  imgResult[6].at<double>(pos_y, pos_x) = energy; imgResult[7].at<double>(pos_y, pos_x) = entropy; imgResult[8].at<double>(pos_y, pos_x) = maximum_prob;
-  imgResult[9].at<double>(pos_y, pos_x) = mu_x_plus_y; imgResult[10].at<double>(pos_y, pos_x) = var_x_plus_y; imgResult[11].at<double>(pos_y, pos_x) = entropy_x_plus_y;
+  int dim_y = dims[1], dim_x = dims[2];
+  int offset = pos_y + pos_x * dim_y; int sizeTextureImg = dim_x * dim_y; // Saving in col-major order
+  //These Haralick features are saved in the same order as the constant haralickFeatureNames in glcm.h
+  imgResult[offset + 0 * sizeTextureImg] = mu_x_times_y; imgResult[offset + 1 * sizeTextureImg] = mu_x_minus_y_squared; imgResult[offset + 2 * sizeTextureImg] = corr;
+  imgResult[offset + 3 * sizeTextureImg] = cluster_prominence; imgResult[offset + 4 * sizeTextureImg] = cluster_shade; imgResult[offset + 5 * sizeTextureImg] = mu_x_minus_y;
+  imgResult[offset + 6 * sizeTextureImg] = energy; imgResult[offset + 7 * sizeTextureImg] = entropy; imgResult[offset + 8 * sizeTextureImg] = maximum_prob;
+  imgResult[offset + 9 * sizeTextureImg] = mu_x_plus_y; imgResult[offset + 10 * sizeTextureImg] = var_x_plus_y; imgResult[offset + 11 * sizeTextureImg] = entropy_x_plus_y;
 
-  imgResult[12].at<double>(pos_y, pos_x) = var_x_minus_y; imgResult[13].at<double>(pos_y, pos_x) = entropy_x_minus_y; imgResult[14].at<double>(pos_y, pos_x) = information_measure_corr_1;
-  imgResult[15].at<double>(pos_y, pos_x) = information_measure_corr_2; imgResult[16].at<double>(pos_y, pos_x) = inverse_diff_norm; imgResult[17].at<double>(pos_y, pos_x) = inverse_diff_moment_norm;
-  imgResult[18].at<double>(pos_y, pos_x) = var_x; imgResult[19].at<double>(pos_y, pos_x) = var_y; 
+  imgResult[offset + 12 * sizeTextureImg] = var_x_minus_y; imgResult[offset + 13 * sizeTextureImg]= entropy_x_minus_y; imgResult[offset + 14 * sizeTextureImg] = information_measure_corr_1;
+  imgResult[offset + 15 * sizeTextureImg] = information_measure_corr_2; imgResult[offset + 16 * sizeTextureImg] = inverse_diff_norm; imgResult[offset + 17 * sizeTextureImg] = inverse_diff_moment_norm;
+  imgResult[offset + 18 * sizeTextureImg] = var_x; imgResult[offset + 19 * sizeTextureImg] = var_y; 
 }
 
-
-
-void FillPixelWithHaralickFeatures(Mat img[], map <string, float> haralickFeatures, int y, int x, bool print){
-  for (int i=0;i<numberOfFeaturesToBeUsed;i++){
-    Mat textureImg = img[i];
-    string name = haralickFeatureNames[i];
-    textureImg.at<double>(y, x)  = haralickFeatures[name];
-    if ((print)&&(i==2)){
-      cout <<"Correlation: "<< haralickFeatures[name]<<endl;
-      
-    }
-    //cout <<"Feature "<<i<<": "<<&(textureImg.data)<<endl;
-  }
-}
-
-void initializeArrayOfImages(Mat img[], int arraySize, int dimY, int dimX){
-  for(int i=0;i<arraySize; i++){
-    img[i] = Mat::zeros(dimY, dimX, CV_64F); 
-
-    //cout << img[i];
-  }
-}

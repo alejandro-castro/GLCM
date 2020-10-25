@@ -4,4 +4,4 @@
 #include <cstring>
 using namespace cv;
 
-void saveFloatImageAsMatFile(Mat image[], int arraySize, int dimY, int dimX);
+void saveFloatImageAsMatFile(double *image, int arraySize, int dimY, int dimX);
