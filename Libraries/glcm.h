@@ -13,6 +13,6 @@ const std::string haralickFeatureNames[numberOfFeaturesToBeUsed] = {"autoc", "co
 "svarh", "senth", "dvarh", "denth", "inf1h", "inf2h", "indnc", "idmnc", "varX", "varY"};
 
 
-std::map<std::string, float>  glcm(cv::Mat img, int numLevels, bool print);
+void glcm(cv::Mat img, int numLevels, int pos_y, int pos_x, Mat imgResult[], bool print);
 void FillPixelWithHaralickFeatures(Mat img[], map <string, float> haralickFeatures, int y, int x, bool print);
 void initializeArrayOfImages(Mat img[], int arraySize, int dimY, int dimX);

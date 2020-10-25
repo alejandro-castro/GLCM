@@ -1,11 +1,13 @@
 #include <cmath>
 #include "glcm.h"
 #include "CVMatlabInterface.h"
+#include <chrono> 
 
 #define WINDOW_SIZE 10
 #define defaultNumLevels 256
 
 int main(int argc, char* argv[]){
+  std::chrono::time_point<std::chrono::high_resolution_clock>  start = std::chrono::high_resolution_clock::now(); 
   //Reading image
   Mat img = imread(argv[1]);
   if(img.empty()){
@@ -36,24 +38,18 @@ int main(int argc, char* argv[]){
   Mat imgResult[numberOfFeaturesToBeUsed];
   initializeArrayOfImages(imgResult, numberOfFeaturesToBeUsed, numberOfWindowsY, numberOfWindowsX);
 
-  map <string, float>  ROIresult;
-  
   for (int j=0; j<numberOfWindowsY; j++){
     for (int i=0; i<numberOfWindowsX; i++){
       Mat ROI = img(Range(j, j+WINDOW_SIZE), Range(i, i+WINDOW_SIZE)); 
-      if ((j==4)&&(i==9)){
-        ROIresult = glcm(ROI, numLevels, true);
-        FillPixelWithHaralickFeatures(imgResult, ROIresult, j, i, true);
-      }
-      else{
-        ROIresult = glcm(ROI, numLevels, false);
-        FillPixelWithHaralickFeatures(imgResult, ROIresult, j, i, false);
-      }
 
-    }
+      glcm(ROI, numLevels, j, i, imgResult, true);
+      }
   }
 
-  saveFloatImageAsMatFile(imgResult, numberOfFeaturesToBeUsed, numberOfWindowsY, numberOfWindowsX);
+  std::chrono::time_point<std::chrono::high_resolution_clock> end = std::chrono::high_resolution_clock::now(); 
+  std::chrono::duration<double, std::milli>  diffTime = end - start; 
+  std::cout << "The running time of this script is: "<<diffTime.count() << " millisecons."<<endl;
+  //saveFloatImageAsMatFile(imgResult, numberOfFeaturesToBeUsed, numberOfWindowsY, numberOfWindowsX);
   return 0;
 }
 
