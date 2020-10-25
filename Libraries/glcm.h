@@ -13,5 +13,5 @@ const std::string haralickFeatureNames[numberOfFeaturesToBeUsed] = {"autoc", "co
 "svarh", "senth", "dvarh", "denth", "inf1h", "inf2h", "indnc", "idmnc", "varX", "varY"};
 
 
-void glcm(cv::Mat img, int numLevels, int pos_y, int pos_x, double *imgResult, int dims[], bool print);
+void glcm(cv::Mat img, int numLevels, int pos_y, int pos_x, double *imgResult, int dims[]);
 

@@ -1,7 +1,7 @@
 #include "glcm.h"
 
 
-void glcm(Mat img, int numLevels, int pos_y, int pos_x, double *imgResult, int dims[], bool print){
+void glcm(Mat img, int numLevels, int pos_y, int pos_x, double *imgResult, int dims[]){
   Mat glcm = Mat::zeros(numLevels, numLevels, CV_32F);
   
   // Creating GLCM matrix with "numLevels", radius = 1 and in the horizontal direction
@@ -12,9 +12,9 @@ void glcm(Mat img, int numLevels, int pos_y, int pos_x, double *imgResult, int d
       glcm.at<float>(pos_y, pos_x) = glcm.at<float>(pos_y, pos_x) + 1; 
     }      
   }
-
+ 
   // Normalizing GLCM matrix for parameter determination
-  glcm = glcm / sum(glcm)[0];
+  glcm = glcm/(img.cols * (img.rows-1));//Should be changed the rescaling factor if we used another direction vector
 
   // Marginal pmf of X, pmf of Y, pmf of x + y, pmf of the |x - y| and expected value of X*Y
   vector <float> p_x(numLevels, 0.0), p_y(numLevels, 0.0), p_x_plus_y(2*numLevels-1, 0), p_x_minus_y(numLevels, 0.0);
@@ -68,9 +68,9 @@ void glcm(Mat img, int numLevels, int pos_y, int pos_x, double *imgResult, int d
   float var_x_minus_y = mu_x_minus_y_squared - mu_x_minus_y * mu_x_minus_y;
 
   // SE PUEDE HACER TODO EN UN SOLO BUCLE PARA EVITAR ACCESOS ADICIONALES A MEMORIA
-  // Energy, inverse difference moment normalized, inverse difference normalized, entropy
+  // Energy, inverse difference moment normalized, inverse difference normalized, entropy, Maximum probability
   // The unnormalized inverse different moment is also called homogeneity, so I going to use only the normalized version
-  float energy = 0.0, inverse_diff_moment_norm = 0.0, inverse_diff_norm = 0.0, entropy = 0.0;
+  float energy = 0.0, inverse_diff_moment_norm = 0.0, inverse_diff_norm = 0.0, entropy = 0.0, maximum_prob = 0.0;
   for(int y = 0; y < numLevels; y++){
     for(int x = 0; x < numLevels; x++){
       float prob =  glcm.at<float>(y,x);
@@ -81,14 +81,17 @@ void glcm(Mat img, int numLevels, int pos_y, int pos_x, double *imgResult, int d
       inverse_diff_moment_norm = inverse_diff_moment_norm + prob/inverse_moment_value_norm;
       inverse_diff_norm = inverse_diff_norm + prob/inverse_diff_value_norm;
       entropy = entropy - prob * log(prob + 0000000000001);
+      if (prob > maximum_prob)  maximum_prob = prob;
     }
   }
 
-  //Entropy of X+Y, entropy of |X-Y|, se puede juntar con el bucle de x+y para reducir accesos a memoria
-  float entropy_x_plus_y = 0.0, entropy_x_minus_y=0.0;
+  //Entropy of X+Y, entropy of |X-Y|, third and fourth central moment of X+Y aka cluster shade and cluster prominence respectively
+  float entropy_x_plus_y = 0.0, entropy_x_minus_y=0.0, cluster_shade = 0.0, cluster_prominence = 0.0;
   for (int z=0; z <2*numLevels-1;z++){
     float prob = p_x_plus_y[z];
     entropy_x_plus_y = entropy_x_plus_y - prob *  log(prob + 0.0000000000001);
+    cluster_shade = cluster_shade + pow(z - mu_x_plus_y, 3) * prob;
+    cluster_prominence = cluster_prominence + pow(z - mu_x_plus_y, 4) * prob;
   }
   for (int z=0; z <numLevels;z++){
     float prob = p_x_minus_y[z];
@@ -112,28 +115,11 @@ void glcm(Mat img, int numLevels, int pos_y, int pos_x, double *imgResult, int d
       coeff_XY_2 = coeff_XY_2 - prob_x * prob_y * log(prob_x*prob_y + 0.0000000000001);
     }
   }
-
+  
   // Information of correlation measures
   float information_measure_corr_1 = (entropy - coeff_XY_1)/max(entropy_x, entropy_y);
   float information_measure_corr_2 = sqrt(1 - exp(-2*(coeff_XY_2 - entropy) ));
 
-  // Third and Fourth central moment of X+Y, aka cluster shade and cluster prominence respectively
-  float cluster_shade = 0.0, cluster_prominence = 0.0;
-  for(int z=0; z < 2*numLevels-1; z++){
-    float prob = p_x_plus_y[z];
-    cluster_shade = cluster_shade + pow(z - mu_x_plus_y, 3) * prob;
-    cluster_prominence = cluster_prominence + pow(z - mu_x_plus_y, 4) * prob;
-  }
-
-
-  // Maximum probability, AGAIN THIS COULD BE MERGED WITH ANOTHER BUCLE TO DECREASE NUMBER OF MEMORY ACCESSES
-  float maximum_prob = 0.0;
-  for(int y = 0; y < numLevels; y++){
-    for(int x = 0; x < numLevels; x++){
-      float prob = glcm.at<float>(y,x);
-      if (prob > maximum_prob)  maximum_prob = prob;
-    }
-  }
   // We don't use the two versions of homogeneity because we use the normalized version that is inverse difference moment normalized and inverse difference normalized
 
   // Now we save the haralick features instead of returning them
