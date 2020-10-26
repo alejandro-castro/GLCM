@@ -44,7 +44,7 @@ The last 2 features are reworked versions of the sum of squares proposed in [1].
 
 Example: <i> ./glcm BadQuality1.png 8 </i>
 
-The algorithm will move through the entire image extracting a window of 10 x 10 and it will calculate the features from each window with numLevels = 8 and with a vertical distance of 1 pixel.
+The algorithm will move through the entire image extracting windows of size 10 x 10 and it will calculate the features for each window with numLevels = 8 and with a vertical distance of 1 pixel.
 The second parameter (number of levels) is optional. If you don't want to specify this number, the image will be processed with the default value: 256 levels.
 
 <h2>Installation:</h2>
@@ -52,15 +52,17 @@ This software needs a minimum cmake of 3.17 and a working version of C++ 14. It 
 It also needs MATLAB to run the test.m to check the Haralick features, but if it is not necessary, the MATLAB part can be erased in the CMakeLists.txt file.
 
 To correctly use this software the following lines should be added to the .bash_profile or .bash_rc in the HOME directory. Take in account that the paths that are shown below should be changed with the correspondent ones in your system.
+
 export CMAKE_PREFIX_PATH="$CMAKE_PREFIX_PATH:/Users/alejandro/Downloads/TesisMaestria/Software/SoftwareTerceros/opencv/install"
 
 The following two lines are only need to save the texture images in mat file format to compare them with the Test.m script.
+
 export PATH="/Applications/MATLAB_R2019b.app/bin:$PATH"
 export DYLD_LIBRARY_PATH="/Applications/MATLAB_R2019b.app/bin/maci64:/Applications/MATLAB_R2019b.app/sys/os/maci64:$DYLD_LIBRARY_PATH"
 
-NOTE: You should also change the absolute paths in the CMakeLists.txt file to the correct ones in your system.
+<b>NOTE:</b> You should also change the absolute paths in the CMakeLists.txt file to the correct ones in your system.
 
-Finally, if you has choose to not compare the Haralick features to the ones provided by MATLAB you should comment the line 3 y 55 of the file main.cpp.
+Finally, if you has choose to not compare the Haralick features to the ones provided by MATLAB you should comment the line 3 and 55 of the file main.cpp.
 
 Once you has finished the installation, you can process the cmake file using the command cmake . when you are in the folder where this project is. You don't need to do this more than one time.
 Later you can compile the source files with the command make, again this works only if you are in the folder where this project is. With this configuration and compilation now you can use the software to process your images.
