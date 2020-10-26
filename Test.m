@@ -1,6 +1,6 @@
 RGB = imread('BadQuality1.png');
 I=rgb2gray(RGB);
-img = I(11:20,2:11);
+img = I(3:12,12:21);
 x = 0:7; x= x';
 result = graycomatrix(img,'Offset',[1 0]);
 p_x_y = result/sum(result(:));

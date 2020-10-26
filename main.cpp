@@ -35,28 +35,22 @@ int main(int argc, char* argv[]){
   int numberOfWindowsY = img.rows - WINDOW_SIZE + 1;
   
   //Initialization of the texture images
-  double *imgResult;  int sizeOfImgResult = numberOfFeaturesToBeUsed * numberOfWindowsY * numberOfWindowsX;
+  int sizeOfImgResult = numberOfFeaturesToBeUsed * numberOfWindowsY * numberOfWindowsX;
+  double imgResult[sizeOfImgResult];
   int dimImgResult[3] = {numberOfFeaturesToBeUsed, numberOfWindowsY, numberOfWindowsX};
-  imgResult = (double*)malloc(sizeof(double) * sizeOfImgResult);
-
-  double *temp = imgResult;
-  for (int i=0; i < sizeOfImgResult;i ++){
-    *temp = 0.0; 
-    temp++;
-  }
-
 
   for (int j=0; j<numberOfWindowsY; j++){
     for (int i=0; i<numberOfWindowsX; i++){
       Mat ROI = img(Range(j, j+WINDOW_SIZE), Range(i, i+WINDOW_SIZE)); 
       glcm(ROI, numLevels, j, i, imgResult, dimImgResult);
-      }
+    }
   }
-
   std::chrono::time_point<std::chrono::high_resolution_clock> end = std::chrono::high_resolution_clock::now(); 
   std::chrono::duration<double, std::milli>  diffTime = end - start; 
   std::cout << "The running time of this script is: "<<diffTime.count() << " milliseconds."<<endl;
 
+  double average_time_per_win = diffTime.count()*1000/(numberOfWindowsX*numberOfWindowsY);
+  std::cout << "The processing speed of this script is: "<<average_time_per_win << " microseconds."<<endl;
   saveFloatImageAsMatFile(imgResult, numberOfFeaturesToBeUsed, numberOfWindowsY, numberOfWindowsX);
 
   return 0;
