@@ -9,6 +9,7 @@
 int main(int argc, char* argv[]){
   std::chrono::time_point<std::chrono::high_resolution_clock>  start = std::chrono::high_resolution_clock::now(); 
   //Reading image
+
   Mat img = imread(argv[1]);
   if(img.empty()){
     cout << "No image!";
